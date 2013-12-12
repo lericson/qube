@@ -1,0 +1,30 @@
+﻿<project>
+  <property name="src" location="src"/>
+  <property name="jar" location="jar"/>
+  <property name="build" location="build"/>
+  <property name="dist" location="dist"/>
+
+  <target name="compile">
+    <tstamp/>
+    <mkdir dir="${build}/classes"/>
+    <javac srcdir="${src}" destdir="${build}/classes" debug="yes" includeantruntime="false">
+      <classpath>
+        <fileset dir="${jar}"/>
+      </classpath>
+      <compilerarg line="-Xlint:unchecked"/>
+    </javac>
+    <copy todir="${build}/classes">
+      <fileset dir="${src}" excludes="**/*.java" />
+    </copy>
+  </target>
+
+  <target name="dist" depends="compile">
+    <mkdir dir="${dist}/lib"/>
+    <jar jarfile="${dist}/lib/${DSTAMP}.jar" basedir="${build}"/>
+  </target>
+
+  <target name="clean">
+    <delete dir="${build}"/>
+  </target>
+
+</project>

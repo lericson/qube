@@ -7,44 +7,60 @@ public class UI
 {
     public static final int WRAP_AFTER = 74;
 
-    private static void printSleep(char c, int sleepMask) {
-        int sleep;
+    public static void printGameLogo()
+    {
+        System.out.println(
+            "                 _    _____  \n" +
+            "      __ _ _   _| |__|___ /  \n" +
+            "     / _` | | | | '_ \\ |_ \\  \n" +
+            "    | (_| | |_| | |_) |__) | \n" +
+            "     \\__, |\\__,_|_.__/____/  \n" +
+            "        |_|                  \n");
+    }
 
-        switch (c & sleepMask) {
-            case '\n':
-            case '.':
-            case ':':
-            case '?':
-            case '!':
-                sleep = 250; break;
-            case ',':
-            case ';':
-                sleep = 100; break;
-            default:
-                sleep = 50;
-        }
-
-        sleep += (int)(sleep * (0.5 - Math.random()));
-
-        System.out.print(c);
-
+    private static void sleep(int milis)
+    {
         if (System.getenv().containsKey("NOSLEEP")) {
             return;
         }
 
         try {
-            Thread.sleep(sleep);
+            Thread.sleep(milis);
         } catch (InterruptedException e) {
         }
     }
 
-    public static void printSlow(String text, String indent)
+    private static void printSleep(char c) {
+        int milis;
+
+        switch (c) {
+            case '\n':
+            case '.':
+            case ':':
+            case '?':
+            case '!':
+                milis = 200; break;
+            case ',':
+            case ';':
+            case '-':
+                milis = 120; break;
+            default:
+                milis = 35;
+        }
+
+        milis += (int)(milis * (0.5 - Math.random()));
+
+        sleep(milis);
+        System.out.print(c);
+    }
+
+    public static void print(String text, String indent)
     {
         int runLength = 0;
         for (char c : text.toCharArray()) {
             c = (runLength >= WRAP_AFTER && c == ' ') ? '\n' : c;
             runLength = (c != '\n') ? (runLength + 1) : 0;
-            printSleep(c, 0xff);
+            printSleep(c);
             if (c == '\n') {
                 System.out.print(indent);
             }
@@ -53,28 +69,70 @@ public class UI
 
     public static void lineFeed()
     {
-        printSleep('\n', 0xff);
+        printSleep('\n');
     }
 
-    public static void printSlow(String text)
+    public static void print(String text)
     {
-        printSlow(text, "");
+        print(text, "");
     }
 
-    public static void printlnSlow(String text, String indent)
+    public static void println(String text, String indent)
     {
-        printSlow(text, indent);
+        print(text, indent);
         lineFeed();
     }
 
-    public static void printlnSlow(String text)
+    public static void println(String text)
     {
-        printlnSlow(text, "");
+        println(text, "");
     }
 
     public static void printPrompt(String prompt)
     {
-        printlnSlow("-> " + prompt, "   ");
+        println("-> " + prompt, "   ");
         lineFeed();
+    }
+
+    public static void printContinue(String prompt)
+    {
+        println("   " + prompt, "   ");
+        lineFeed();
+    }
+
+    private static String numeral(int n)
+    {
+        switch (n) {
+            case  1: return "first";
+            case  2: return "second";
+            case  3: return "third";
+            case  4: return "fourth";
+            case  5: return "fifth";
+            case  6: return "sixth";
+            case  7: return "seventh";
+            case  8: return "eighth";
+            case  9: return "ninth";
+            case 10: return "tenth";
+            case 11: return "eleventh";
+            case 12: return "twelfth";
+            default:
+                String numeral = String.valueOf(n);
+                switch (n & 3) {
+                    case 1: return numeral + "st";
+                    case 2: return numeral + "nd";
+                    case 3: return numeral + "rd";
+                    default: return numeral + "th";
+                }
+        }
+    }
+
+    public static void printRespawn(int nRespawns)
+    {
+        printPrompt("You die.");
+        sleep(5000);
+        printContinue("God has other plans for you, however.");
+        if (nRespawns > 1) {
+            printContinue(". . . For the " + numeral(nRespawns) + " time.");
+        }
     }
 }

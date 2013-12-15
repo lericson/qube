@@ -39,13 +39,15 @@ public class Parser
      */
     public Command getCommand() 
     {
-        String inputLine;   // will hold the full input line
+        String inputLine = "";
         String word1 = null;
         String word2 = null;
 
-        UI.printSlow("<- ");     // print prompt
-
-        inputLine = reader.nextLine();
+        while (inputLine.length() == 0){
+            UI.print("<- ");
+            inputLine = reader.nextLine().trim();
+            UI.lineFeed();
+        }
 
         // Find up to two words on the line.
         Scanner tokenizer = new Scanner(inputLine);

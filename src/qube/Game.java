@@ -3,42 +3,23 @@ package qube;
 import java.util.*;
 import qube.items.*;
 
-/**
- *  This class is the main class of the "World of Zuul" application. 
- *  "World of Zuul" is a very simple, text based adventure game.  Users 
- *  can walk around some scenery. That's all. It should really be extended 
- *  to make it more interesting!
- * 
- *  To play this game, create an instance of this class and call the "play"
- *  method.
- * 
- *  This main class creates and initialises all the others: it creates all
- *  rooms, creates the parser and starts the game.  It also evaluates and
- *  executes the commands that the parser returns.
- * 
- * @author  Michael Kölling and David J. Barnes
- * @version 2011.08.10
- */
-
 public class Game 
 {
     public static final int CUBE_SIDE_LENGTH = 3;
 
     Parser parser;
     Coordinate coord;
+    Coordinate respawn;
+    int nRespawns;
     Room[][][] rooms;
     static HashMap<String, Coordinate> movements;
-    static List<Trap> traps;
-    static Room outsideCubeRoom;
-    static Item ominousNote;
+    static Item ominousNote = new Note("note",
+        "The torn up note is scribbled with what appears to be fecal " +
+        "matter. It reads:\n\n" +
+        "  its in the panels . . .\n" +
+        "  { x, y, z } ⊂ ℙ^α ⇒ trap");
 
     static {
-        traps = Trap.defaultTraps();
-        ominousNote = new Note("note", "The torn up note is scribbled with " +
-                                       "what appears to be fecal matter. It " +
-                                       "reads:\n\n" +
-                                       "  its in the panels . . .\n" +
-                                       "  { x, y, z } ⊂ ℙ ⇒ trap");
         movements = new HashMap<String, Coordinate>();
         movements.put("east",   new Coordinate(+1, 0, 0));
         movements.put("west",   new Coordinate(-1, 0, 0));
@@ -46,12 +27,6 @@ public class Game
         movements.put("north",  new Coordinate(0, -1, 0));
         movements.put("up",     new Coordinate(0, 0, +1));
         movements.put("down",   new Coordinate(0, 0, -1));
-    }
-
-    static Trap randomTrap()
-    {
-        int n = (int)(Math.random() * traps.size());
-        return traps.get(n);
     }
 
     private class GameEnded extends Throwable { }
@@ -84,8 +59,10 @@ public class Game
         for (int z = 0; z < n; z++) {
             for (int y = 0; y < n; y++) {
                 for (int x = 0; x < n; x++) {
-                    Item panels = new Note("panels", "here we would have the angränsande rooms");
-                    rooms[z][y][x] = new Room(new Coordinate(x, y, z), randomTrap(), panels);
+                    Coordinate coord = new Coordinate(x, y, z);
+                    Item panels = new Panels(coord);
+                    Trap trap = Trap.randomTrap();
+                    rooms[z][y][x] = new Room(coord, trap, panels);
                 }
             }
         }
@@ -99,7 +76,7 @@ public class Game
         for (Room[][] roomSurface : rooms) {
             for (Room[] roomLine : roomSurface) {
                 for (Room room : roomLine) {
-                    UI.printSlow(((room == null) ? "-" : (room.isTrapped() ? "T" : "S") + room.getRoomNumber()) + " ");
+                    UI.print(((room == null) ? "-" : (room.isTrapped() ? "T" : "S") + room.getRoomNumber()) + " ");
                 }
                 UI.lineFeed();
             }
@@ -116,7 +93,6 @@ public class Game
 
         while (true) {
             Command command = parser.getCommand();
-            UI.lineFeed();
             try {
                 processCommand(command);
             } catch (GameEnded e) {
@@ -130,14 +106,9 @@ public class Game
      */
     private void printWelcome()
     {
-        UI.printlnSlow("              _    _____  \n" +
-                       "   __ _ _   _| |__|___ /  \n" +
-                       "  / _` | | | | '_ \\ |_ \\  \n" +
-                       " | (_| | |_| | |_) |__) | \n" +
-                       "  \\__, |\\__,_|_.__/____/  \n" +
-                       "     |_|                  \n");
+        UI.printGameLogo();
 
-        UI.printlnSlow("-- Alderson awakens and finds himself in a cube-shaped " +
+        UI.println("-- Alderson awakens and finds himself in a cube-shaped " +
                        "room with a hatch in each wall and in the floor and " +
                        "ceiling.\n\nOpening some of the hatches, he finds " +
                        "passages to rooms that are identical except for " +
@@ -150,7 +121,7 @@ public class Game
                        "and ceiling.");
 
         for (String cap : getRoom().getCapabilities().values()) {
-            UI.printPrompt(cap);
+            UI.printContinue(cap);
         }
     }
 
@@ -205,6 +176,7 @@ public class Game
             return;
         }
 
+        respawn = coord;
         coord = coord.add(movement);
 
         UI.printPrompt("You crawl through the hatch . . .");
@@ -212,25 +184,34 @@ public class Game
         Room room = getRoom();
 
         for (String d : room.getTrapDescription()) {
-            UI.printPrompt(d);
+            UI.printContinue(d);
         }
 
         if (room.isTrapped()) {
-            UI.printPrompt("You die.");
-            throw new GameEnded();
+            respawn();
+            room = getRoom();
         }
 
         UI.printPrompt(room.getShortDescription());
         for (String cap : room.getCapabilities().values()) {
-            UI.printPrompt(cap);
+            UI.printContinue(cap);
         }
+
+        respawn = coord;
     }
 
-    private Room getRoom() {    
+    private void respawn()
+    {
+        UI.printRespawn(++nRespawns);
+        coord = respawn;
+    }
+
+    private Room getRoom()
+    {
         try {
             return rooms[coord.getZ()][coord.getY()][coord.getX()];
         } catch (IndexOutOfBoundsException  e) {
-            return outsideCubeRoom;
+            return Room.outsideCubeRoom();
         }
     }
 
@@ -249,11 +230,12 @@ public class Game
             return;
         }
 
-        if (item instanceof Lookable) {
-            Lookable lookableItem = (Lookable)item;
-            UI.printPrompt(lookableItem.getLookString());
-        } else {
-            UI.printlnSlow("cant look at it etc");
+        if (!(item instanceof Lookable)) {
+            UI.printPrompt("You can't see how " + identifier + " looks.");
+            return;
         }
+
+        Lookable lookableItem = (Lookable)item;
+        UI.printPrompt(lookableItem.getLookString());
     }
 }

@@ -1,5 +1,7 @@
 package qube;
 
+import java.util.*;
+
 /**
  * Represents a textual trap that is either set or not.
  *
@@ -28,18 +30,29 @@ public class Trap
             "you start to feel the gravitational force " +
             "differential tear your body literally to bits " + 
             "and you are smushed onto the 2D plane that is " +
-            "the black hole's surface."));
+            "the black hole's surface.");
     }
 
     public static List<Trap> defaultTraps() {
-        traps = new ArrayList<Trap>();
+        List<Trap> traps = new ArrayList<Trap>();
         traps.add(new Trap("A foul odour enters your nostrils . . .",
-                           "But you realize you forgot to close your mouth.",
-                           "You begin to lose consciousness."));
+                           "You realize you forgot to close your mouth. " +
+                           "You correct this mistake.",
+                           "The light fades to black before your eyes as " +
+                           "you slowly slip out of consciousness."));
         traps.add(new Trap("A paradox enters your train of thought . . .",
-                           "But you realize how meaningless it all is.",
-                           "This statement is false."));
+                           "You realize how meaningless it all is.",
+                           "It is inescapable. You cannot continue your " +
+                           "journey, because . . . This statement is false."));
         return traps;
+    }
+
+    static List<Trap> traps = defaultTraps();
+
+    static Trap randomTrap()
+    {
+        int n = (int)(Math.random() * traps.size());
+        return traps.get(n);
     }
 
     /**

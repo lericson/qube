@@ -1,7 +1,7 @@
 package qube;
 
 import java.util.*;
-import qube.items.Item;
+import qube.items.*;
 
 /**
  * Class Room - a room in an adventure game.
@@ -92,6 +92,17 @@ public class Room
         return "You are in a cube-shaped room.";
     }
 
+    private String getLookables()
+    {
+        String r = "";
+        for (Item item : items.values()) {
+            if (item instanceof Lookable) {
+                r += item.getIdentifier().toUpperCase() + ", ";
+            }
+        }
+        return r.substring(0, r.length() - 2);
+    }
+
     /**
      * @return An array of capability descriptions of the room.
      */
@@ -100,7 +111,7 @@ public class Room
         HashMap<String, String> caps = new HashMap<String, String>();
         caps.put("go", "You can GO through hatchways EAST, WEST, NORTH, " +
                                                     "SOUTH, UP, DOWN.");
-        caps.put("look", "You can LOOK at the PANELS in the room.");
+        caps.put("look", "You can LOOK at " + getLookables() + " in this room.");
         return caps;
     }
 

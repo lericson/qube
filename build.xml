@@ -6,6 +6,7 @@
 
   <target name="compile">
     <tstamp/>
+    <mkdir dir="${jar}"/>
     <mkdir dir="${build}/classes"/>
     <javac srcdir="${src}" destdir="${build}/classes" debug="yes" includeantruntime="false">
       <classpath>

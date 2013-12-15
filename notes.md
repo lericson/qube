@@ -4,6 +4,7 @@
 
 - Roterande rum
 - Bryggan
+- Taket?
 
 ## Mål
 
@@ -19,16 +20,17 @@ Tillämpa högerhandsregeln!
 
 ## Så här kan det se ut
 
-         ___        ____ _____
-        / _ \ _   _| __ )___ /
-       | | | | | | |  _ \ |_ \
-       | |_| | |_| | |_) |__) |
-        \__\_\\__,_|____/____/
+                 _    _____
+      __ _ _   _| |__|___ /
+     / _` | | | | '_ \ |_ \
+    | (_| | |_| | |_) |__) |
+     \__, |\__,_|_.__/____/
+        |_|
 
     -> You awaken and find yourself in a cube-shaped room with a hatch in each of the
        four walls, as well as the floor and the ceiling.
 
-    -> You can go through hatchways to the east, west, north, south, above, below.
+    -> You can open hatchways to the east, west, north, south, above, below.
 
     -> You can look at the panels in the room.
 
@@ -46,10 +48,16 @@ Tillämpa högerhandsregeln!
 
     <- open east
 
-    -> The panel in the hatchway reads 100110. The room ahead is colored blue.
+    -> You open the hatch.
+       The panel in the hatchway reads 100110.
+       The room ahead is colored blue.
 
-       You hear a sound . . .
-       A chainsaw rips you apart.
+     -> go east
+
+    <- You crawl through the hatch . . .
+       As you step onto the floor,
+       a chainsaw rips you apart.
+
        You die.
 
     grid(4):

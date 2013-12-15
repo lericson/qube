@@ -1,14 +1,10 @@
 package qube;
 
-import java.util.Set;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
+import qube.items.Item;
 
 /**
  * Class Room - a room in an adventure game.
- *
- * This class is part of the "World of Zuul" application. 
- * "World of Zuul" is a very simple, text based adventure game.  
  *
  * A "Room" represents one location in the scenery of the game.  It is 
  * connected to other rooms via exits.  For each existing exit, the room 
@@ -20,29 +16,66 @@ import java.util.Iterator;
 
 public class Room 
 {
-    private String description;
-    private HashMap<String, Room> exits;        // stores exits of this room.
+    private Coordinate coord;
+    private Trap trap;
+    private HashMap<String, Item> items;
 
-    /**
-     * Create a room described "description". Initially, it has
-     * no exits. "description" is something like "a kitchen" or
-     * "an open court yard".
-     * @param description The room's description.
-     */
-    public Room(String description) 
+    private static int[] primePowers = { 1, 2, 3, 4, 5, 7, 8, 9, 11, 13, 16,
+                                         17, 21, 23, 25, 27, 29, 31, 32, 41,
+                                         49, 64, 81, 121, 125, 128, 169, 243 };
+
+    private boolean isPrimePower(int i)
     {
-        this.description = description;
-        exits = new HashMap<String, Room>();
+        return 0 <= Arrays.binarySearch(primePowers, getRoomNumber());
     }
 
-    /**
-     * Define an exit from this room.
-     * @param direction The direction of the exit.
-     * @param neighbor  The room to which the exit leads.
-     */
-    public void setExit(String direction, Room neighbor) 
+    public Room(Coordinate coord, Trap trap, Iterable<Item> items) 
     {
-        exits.put(direction, neighbor);
+        this.coord = coord;
+        this.trap = trap;
+        this.items = new HashMap<String, Item>();
+        for (Item item : items) {
+            addItem(item);
+        }
+    }
+
+    public Room(Coordinate coord, Trap trap, Item... items)
+    {
+        this(coord, trap, Arrays.asList(items));
+    }
+
+    public boolean isTrapped()
+    {
+        if (coord == null) {
+            return true;
+        }
+
+        return !isPrimePower(getRoomNumber());
+    }
+
+    public int getRoomNumber() {
+        return (coord.getX() << 4)
+             | (coord.getY() << 2)
+             | (coord.getZ() << 0);
+    }
+
+    public String[] getTrapDescription() {
+        return trap.getDescription(isTrapped());
+    }
+
+    public void addItem(Item item)
+    {
+        items.put(item.getIdentifier(), item);
+    }
+
+    public Item removeItem(String identifier)
+    {
+        return items.remove(identifier);
+    }
+
+    public Item getItem(String identifier)
+    {
+        return items.get(identifier);
     }
 
     /**
@@ -51,18 +84,19 @@ public class Room
      */
     public String getShortDescription()
     {
-        return description;
+        return "You are in a cube-shaped room.";
     }
 
     /**
-     * Return a description of the room in the form:
-     *     You are in the kitchen.
-     *     Exits: north west
-     * @return A long description of this room
+     * @return An array of capability descriptions of the room.
      */
-    public String getLongDescription()
+    public Map<String, String> getCapabilities()
     {
-        return "You are " + description + ".\n" + getExitString();
+        HashMap<String, String> caps = new HashMap<String, String>();
+        caps.put("go", "You can GO through hatchways EAST, WEST, NORTH, " +
+                                                    "SOUTH, UP, DOWN.");
+        caps.put("look", "You can LOOK at the PANELS in the room.");
+        return caps;
     }
 
     /**
@@ -72,23 +106,20 @@ public class Room
      */
     private String getExitString()
     {
+        // FIXME
+        return "(all exits)";
+        /*
         String returnString = "Exits:";
         Set<String> keys = exits.keySet();
         for(String exit : keys) {
             returnString += " " + exit;
         }
         return returnString;
+        */
     }
 
-    /**
-     * Return the room that is reached if we go from this room in direction
-     * "direction". If there is no room in that direction, return null.
-     * @param direction The exit's direction.
-     * @return The room in the given direction.
-     */
-    public Room getExit(String direction) 
-    {
-        return exits.get(direction);
+    public Coordinate getCoordinate() {
+        return coord;
     }
 }
 

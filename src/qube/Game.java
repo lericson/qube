@@ -1,5 +1,8 @@
 package qube;
 
+import java.util.HashMap;
+import qube.items.*;
+
 /**
  *  This class is the main class of the "World of Zuul" application. 
  *  "World of Zuul" is a very simple, text based adventure game.  Users 
@@ -20,14 +23,48 @@ package qube;
 public class Game 
 {
     private Parser parser;
-    private Room currentRoom;
-        
-    /**
-     * Create the game and initialise its internal map.
-     */
-    public Game() 
+    private Coordinate coord;
+    private Room[][][] rooms;
+    private static Room outsideCubeRoom;
+    private static Item ominousNote;
+    private static HashMap<String, Coordinate> movements;
+    static {
+        outsideCubeRoom = new Room(null, new Trap(
+            "You suddenly realize there is nothing " +
+            "but air beneath you.",
+            "By some divine intervention you begin to levitate.",
+            "You fall endlessly, hurtling towards the center " +
+            "of a black hole. As you reach the event horizon " +
+            "you start to feel the gravitational force " +
+            "differential tear your body literally to bits " + 
+            "and you are smushed onto the 2D plane that is " +
+            "the black hole's surface."));
+        ominousNote = new Note("note", "The torn up note is scribbled with " +
+                                       "what appears to be fecal matter. It " +
+                                       "reads:\n\n" +
+                                       "  its in the panels . . .\n" +
+                                       "  { x, y, z } ⊂ ℙ ⇒ trap");
+        movements = new HashMap<String, Coordinate>();
+        movements.put("east",   new Coordinate(+1, 0, 0));
+        movements.put("west",   new Coordinate(-1, 0, 0));
+        movements.put("south",  new Coordinate(0, +1, 0));
+        movements.put("north",  new Coordinate(0, -1, 0));
+        movements.put("up",     new Coordinate(0, 0, +1));
+        movements.put("down",   new Coordinate(0, 0, -1));
+    }
+
+    private class GameEnded extends Throwable { }
+
+    public Game()
     {
-        createRooms();
+        this(3);
+    }
+
+    public Game(int n)
+    {
+        createRooms(n);
+        coord = new Coordinate(n / 2, n / 2, n / 2);
+        getRoom().addItem(ominousNote);
         parser = new Parser();
     }
 
@@ -37,35 +74,34 @@ public class Game
         g.play();
     }
 
-    /**
-     * Create all the rooms and link their exits together.
-     */
-    private void createRooms()
+    private void createRooms(int n)
     {
-        Room outside, theater, pub, lab, office;
-      
-        // create the rooms
-        outside = new Room("outside the main entrance of the university");
-        theater = new Room("in a lecture theater");
-        pub = new Room("in the campus pub");
-        lab = new Room("in a computing lab");
-        office = new Room("in the computing admin office");
-        
-        // initialise room exits
-        outside.setExit("east", theater);
-        outside.setExit("south", lab);
-        outside.setExit("west", pub);
+        rooms = new Room[n][n][n];
+        for (int z = 0; z < n; z++) {
+            for (int y = 0; y < n; y++) {
+                for (int x = 0; x < n; x++) {
+                    Trap trap = new Trap("something", "went ok", "went to shit");
+                    Item panels = new Note("panels", "here we would have the angränsande rooms");
+                    rooms[z][y][x] = new Room(new Coordinate(x, y, z), trap, panels);
+                }
+            }
+        }
+    }
 
-        theater.setExit("west", outside);
-
-        pub.setExit("east", outside);
-
-        lab.setExit("north", outside);
-        lab.setExit("east", office);
-
-        office.setExit("west", lab);
-
-        currentRoom = outside;  // start game outside
+    /**
+     * Dump room configuration.
+     */
+    private void dumpRooms()
+    {
+        for (Room[][] roomSurface : rooms) {
+            for (Room[] roomLine : roomSurface) {
+                for (Room room : roomLine) {
+                    UI.printSlow(((room == null) ? "-" : (room.isTrapped() ? "T" : "S") + room.getRoomNumber()) + " ");
+                }
+                UI.lineFeed();
+            }
+            UI.lineFeed();
+        }
     }
 
     /**
@@ -75,15 +111,15 @@ public class Game
     {            
         printWelcome();
 
-        // Enter the main command loop.  Here we repeatedly read commands and
-        // execute them until the game is over.
-                
-        boolean finished = false;
-        while (! finished) {
+        while (true) {
             Command command = parser.getCommand();
-            finished = processCommand(command);
+            UI.lineFeed();
+            try {
+                processCommand(command);
+            } catch (GameEnded e) {
+                break;
+            }
         }
-        System.out.println("Thank you for playing.  Good bye.");
     }
 
     /**
@@ -91,12 +127,28 @@ public class Game
      */
     private void printWelcome()
     {
-        System.out.println();
-        System.out.println("Welcome to the World of Zuul!");
-        System.out.println("World of Zuul is a new, incredibly boring adventure game.");
-        System.out.println("Type '" + CommandWord.HELP + "' if you need help.");
-        System.out.println();
-        System.out.println(currentRoom.getLongDescription());
+        UI.printlnSlow("              _    _____  \n" +
+                       "   __ _ _   _| |__|___ /  \n" +
+                       "  / _` | | | | '_ \\ |_ \\  \n" +
+                       " | (_| | |_| | |_) |__) | \n" +
+                       "  \\__, |\\__,_|_.__/____/  \n" +
+                       "     |_|                  \n");
+
+        UI.printlnSlow("-- Alderson awakens and finds himself in a cube-shaped " +
+                       "room with a hatch in each wall and in the floor and " +
+                       "ceiling.\n\nOpening some of the hatches, he finds " +
+                       "passages to rooms that are identical except for " +
+                       "their colors. He enters an orange room and, without " +
+                       "warning, is sliced to pieces by a wire grill.\n\n" +
+                       ". . .\n", "   ");
+
+        UI.printPrompt("You awaken and find yourself in a cube-shaped " +
+                       "room with a hatch in each wall and in the floor " +
+                       "and ceiling.");
+
+        for (String cap : getRoom().getCapabilities().values()) {
+            UI.printPrompt(cap);
+        }
     }
 
     /**
@@ -104,19 +156,21 @@ public class Game
      * @param command The command to be processed.
      * @return true If the command ends the game, false otherwise.
      */
-    private boolean processCommand(Command command) 
+    private void processCommand(Command command) throws GameEnded
     {
-        boolean wantToQuit = false;
-
         CommandWord commandWord = command.getCommandWord();
 
         switch (commandWord) {
             case UNKNOWN:
-                System.out.println("I don't know what you mean...");
+                UI.printPrompt("I can't do that, Dave . . .");
                 break;
 
             case HELP:
-                printHelp();
+                UI.printPrompt("There is no helping in the cube.");
+                break;
+
+            case LOOK:
+                lookAt(command);
                 break;
 
             case GO:
@@ -124,67 +178,79 @@ public class Game
                 break;
 
             case QUIT:
-                wantToQuit = quit(command);
-                break;
+                throw new GameEnded();
         }
-        return wantToQuit;
-    }
-
-    // implementations of user commands:
-
-    /**
-     * Print out some help information.
-     * Here we print some stupid, cryptic message and a list of the 
-     * command words.
-     */
-    private void printHelp() 
-    {
-        System.out.println("You are lost. You are alone. You wander");
-        System.out.println("around at the university.");
-        System.out.println();
-        System.out.println("Your command words are:");
-        parser.showCommands();
     }
 
     /** 
      * Try to go in one direction. If there is an exit, enter the new
      * room, otherwise print an error message.
      */
-    private void goRoom(Command command) 
+    private void goRoom(Command command) throws GameEnded
     {
         if(!command.hasSecondWord()) {
             // if there is no second word, we don't know where to go...
-            System.out.println("Go where?");
+            UI.printPrompt("Go where?");
             return;
         }
 
         String direction = command.getSecondWord();
+        Coordinate movement = movements.get(direction);
 
-        // Try to leave current room.
-        Room nextRoom = currentRoom.getExit(direction);
-
-        if (nextRoom == null) {
-            System.out.println("There is no door!");
+        if (movement == null) {
+            UI.printPrompt(String.format("Go %s? There's no %s.", direction, direction));
+            return;
         }
-        else {
-            currentRoom = nextRoom;
-            System.out.println(currentRoom.getLongDescription());
+
+        coord = coord.add(movement);
+
+        UI.printPrompt("You crawl through the hatch . . .");
+
+        Room room = getRoom();
+
+        for (String d : room.getTrapDescription()) {
+            UI.printPrompt(d);
+        }
+
+        if (room.isTrapped()) {
+            UI.printPrompt("You die.");
+            throw new GameEnded();
+        }
+
+        UI.printPrompt(room.getShortDescription());
+        for (String cap : room.getCapabilities().values()) {
+            UI.printPrompt(cap);
         }
     }
 
-    /** 
-     * "Quit" was entered. Check the rest of the command to see
-     * whether we really quit the game.
-     * @return true, if this command quits the game, false otherwise.
-     */
-    private boolean quit(Command command) 
-    {
-        if(command.hasSecondWord()) {
-            System.out.println("Quit what?");
-            return false;
+    private Room getRoom() {    
+        try {
+            return rooms[coord.getZ()][coord.getY()][coord.getX()];
+        } catch (IndexOutOfBoundsException  e) {
+            return outsideCubeRoom;
         }
-        else {
-            return true;  // signal that we want to quit
+    }
+
+    private void lookAt(Command command)
+    {
+        if (!command.hasSecondWord()) {
+            UI.printPrompt("Look at what?");
+            return;
+        }
+
+        String identifier = command.getSecondWord();
+        Item item = getRoom().getItem(identifier);
+
+        if (item == null) {
+            UI.printPrompt("There is no " + identifier + " in the room.");
+            return;
+        }
+
+        if (item instanceof Lookable) {
+            Lookable lookableItem = (Lookable)item;
+            UI.printPrompt(lookableItem.getLookString());
+        } else {
+            UI.printlnSlow("cant look at it etc");
         }
     }
 }

@@ -2,6 +2,8 @@ package qube;
 
 import java.util.Scanner;
 
+import qube.Coordinate;
+
 /**
  * This class is part of the "World of Zuul" application. 
  * "World of Zuul" is a very simple, text based adventure game.  
@@ -41,7 +43,7 @@ public class Parser
         String word1 = null;
         String word2 = null;
 
-        System.out.print("> ");     // print prompt
+        UI.printSlow("<- ");     // print prompt
 
         inputLine = reader.nextLine();
 

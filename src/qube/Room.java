@@ -44,6 +44,11 @@ public class Room
         this(coord, trap, Arrays.asList(items));
     }
 
+    public static Room outsideCubeRoom()
+    {
+        return new Room(null, Trap.gravityTrap());
+    }
+
     public boolean isTrapped()
     {
         if (coord == null) {

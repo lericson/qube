@@ -1,6 +1,6 @@
 package qube;
 
-import java.util.HashMap;
+import java.util.*;
 import qube.items.*;
 
 /**
@@ -22,23 +22,18 @@ import qube.items.*;
 
 public class Game 
 {
-    private Parser parser;
-    private Coordinate coord;
-    private Room[][][] rooms;
-    private static Room outsideCubeRoom;
-    private static Item ominousNote;
-    private static HashMap<String, Coordinate> movements;
+    public static final int CUBE_SIDE_LENGTH = 3;
+
+    Parser parser;
+    Coordinate coord;
+    Room[][][] rooms;
+    static HashMap<String, Coordinate> movements;
+    static List<Trap> traps;
+    static Room outsideCubeRoom;
+    static Item ominousNote;
+
     static {
-        outsideCubeRoom = new Room(null, new Trap(
-            "You suddenly realize there is nothing " +
-            "but air beneath you.",
-            "By some divine intervention you begin to levitate.",
-            "You fall endlessly, hurtling towards the center " +
-            "of a black hole. As you reach the event horizon " +
-            "you start to feel the gravitational force " +
-            "differential tear your body literally to bits " + 
-            "and you are smushed onto the 2D plane that is " +
-            "the black hole's surface."));
+        traps = Trap.defaultTraps();
         ominousNote = new Note("note", "The torn up note is scribbled with " +
                                        "what appears to be fecal matter. It " +
                                        "reads:\n\n" +
@@ -53,16 +48,22 @@ public class Game
         movements.put("down",   new Coordinate(0, 0, -1));
     }
 
+    static Trap randomTrap()
+    {
+        int n = (int)(Math.random() * traps.size());
+        return traps.get(n);
+    }
+
     private class GameEnded extends Throwable { }
 
     public Game()
     {
-        this(3);
+        this(CUBE_SIDE_LENGTH);
     }
 
     public Game(int n)
     {
-        createRooms(n);
+        createCube(n);
         coord = new Coordinate(n / 2, n / 2, n / 2);
         getRoom().addItem(ominousNote);
         parser = new Parser();
@@ -74,15 +75,17 @@ public class Game
         g.play();
     }
 
-    private void createRooms(int n)
+    /**
+     * Create a n^3 cube of rooms with appropriate data.
+     */
+    private void createCube(int n)
     {
         rooms = new Room[n][n][n];
         for (int z = 0; z < n; z++) {
             for (int y = 0; y < n; y++) {
                 for (int x = 0; x < n; x++) {
-                    Trap trap = new Trap("something", "went ok", "went to shit");
                     Item panels = new Note("panels", "here we would have the angränsande rooms");
-                    rooms[z][y][x] = new Room(new Coordinate(x, y, z), trap, panels);
+                    rooms[z][y][x] = new Room(new Coordinate(x, y, z), randomTrap(), panels);
                 }
             }
         }

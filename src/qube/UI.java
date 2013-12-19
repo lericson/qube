@@ -100,8 +100,10 @@ public class UI
         lineFeed();
     }
 
-    private static String numeral(int n)
+    private static String ordinal(int n)
     {
+        String[] sufixes = new String[] { "th", "st", "nd", "rd", "th",
+                                          "th", "th", "th", "th", "th" };
         switch (n) {
             case  1: return "first";
             case  2: return "second";
@@ -115,14 +117,12 @@ public class UI
             case 10: return "tenth";
             case 11: return "eleventh";
             case 12: return "twelfth";
-            default:
-                String numeral = String.valueOf(n);
-                switch (n & 3) {
-                    case 1: return numeral + "st";
-                    case 2: return numeral + "nd";
-                    case 3: return numeral + "rd";
-                    default: return numeral + "th";
-                }
+        }
+        switch (n % 100) {
+            case 11:
+            case 12:
+            case 13: return n + "th";
+            default: return n + sufixes[n % 10];
         }
     }
 
@@ -132,7 +132,7 @@ public class UI
         sleep(5000);
         printContinue("God has other plans for you, however.");
         if (nRespawns > 1) {
-            printContinue(". . . For the " + numeral(nRespawns) + " time.");
+            printContinue(". . . For the " + ordinal(nRespawns) + " time.");
         }
     }
 }
